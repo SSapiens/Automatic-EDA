@@ -1,0 +1,580 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://www.semanticweb.org/eda/ontologies/2025/5/variablescategoricas"
+         xmlns="http://www.semanticweb.org/eda/ontologies/2025/5/variablescategoricas#">
+
+<owl:Ontology rdf:about="http://www.semanticweb.org/eda/ontologies/2025/5/variablescategoricas">
+  <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ontologia EDA - Variables Categoricas</rdfs:label>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ontologia de conocimiento experto para el analisis exploratorio de variables
+categoricas. Modela perfiles de columna (cardinalidad, distribucion de frecuencias,
+presencia de categoria dominante, proporcion de nulos) y tecnicas de visualizacion
+recomendadas. Las reglas SWRL infieren automaticamente que graficos convienen
+y que advertencias lanzar segun las propiedades medidas de la columna.
+
+CORRECCIONES APLICADAS (v6):
+- FIX 1: tieneCardinalidad migrado a xsd:int para compatibilidad con SWRL Drools.
+- FIX 2: tieneRatioDominante y tieneRatioNulos migrados a xsd:double (mejor soporte que decimal/float).
+- FIX 3: tieneTotalRegistros migrado a xsd:int.
+- FIX 4: AlertaCategoriaDominante sin acento en IRI.
+- FIX 5: ColumnaCardinalidadMuyAlta es subclase directa de ColumnaCategorica.
+- FIX 6: Literales en reglas SWRL unificados a xsd:int y xsd:double segun corresponda.
+- FIX 7: Eliminacion total de xsd:decimal y xsd:float
+- FIX 8: Uso de IRIs absolutas en datatypeIRI para evitar fallos de resolucion de prefijos
+- FIX 9: Normalizacion ASCII total
+- FIX 10: Conversion de reglas SWRL a consultas SQWRL (anadido sqwrl:select) y renombrado a formato RXX_Nombre para ejecucion directa de la ontologia para evitar errores de codificacion en literales en propiedades numericas para evitar "unsupported argument type" en Drools.</rdfs:comment>
+</owl:Ontology>
+
+<owl:ObjectProperty rdf:about="#sugiereTecnica">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range rdf:resource="#TecnicaVisualizacion"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#tieneRecomendacion">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range rdf:resource="#Recomendacion"/>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#tieneDistribucion">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range rdf:resource="#DistribucionCategorica"/>
+</owl:ObjectProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneCardinalidad">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneRatioDominante">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneRatioNulos">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneNombre">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneTotalRegistros">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#tieneEntropia">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+</owl:DatatypeProperty>
+
+<owl:AnnotationProperty rdf:about="http://swrl.stanford.edu/ontologies/3.3/swrla.owl#isRuleEnabled"/>
+
+<owl:Class rdf:about="#ColumnaCategorica"/>
+
+<owl:Class rdf:about="#TecnicaVisualizacion"/>
+
+<owl:Class rdf:about="#Recomendacion"/>
+
+<owl:Class rdf:about="#DistribucionCategorica"/>
+
+<owl:Class rdf:about="#ColumnaBinaria">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</owl:hasValue>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indTortaPastel"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indBarrasHorizontal"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#ColumnaCardinalidadBaja">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</xsd:maxExclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first>
+                        <rdf:Description>
+                          <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</xsd:minExclusive>
+                        </rdf:Description>
+                      </rdf:first>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indBarrasVertical"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#ColumnaCardinalidadMedia">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indBarrasHorizontal"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indFrecuenciaAcumulada"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#ColumnaCardinalidadAlta">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#sugiereTecnica"/>
+      <owl:hasValue rdf:resource="#indTreemap"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indAgruparMinoritarias"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#ColumnaCardinalidadMuyAlta">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indNoInformativa"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#DistribucionBalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.5</xsd:maxExclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indAptoSegmentacion"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#DistribucionLevementeDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+</owl:Class>
+
+<owl:Class rdf:about="#DistribucionDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.5</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+</owl:Class>
+
+<owl:Class rdf:about="#DistribucionMuyDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indAlertaDominante"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indNoInformativa"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoBarrasVertical">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoBarrasHorizontal">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoTortaPastel">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoFrecuenciaAcumulada">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoTreemap">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#AgruparCategoriasMinoritarias">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#NoInformativaParaSegmentacion">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#AptoParaSegmentacion">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#AlertaNulosAltos">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioNulos"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.2</xsd:minExclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indAlertaNulos"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:Class rdf:about="#AlertaCategoriaDominante">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions>
+                <rdf:Description>
+                  <rdf:first>
+                    <rdf:Description>
+                      <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:minInclusive>
+                    </rdf:Description>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:subClassOf>
+    <owl:Restriction>
+      <owl:onProperty rdf:resource="#tieneRecomendacion"/>
+      <owl:hasValue rdf:resource="#indAlertaDominante"/>
+    </owl:Restriction>
+  </rdfs:subClassOf>
+</owl:Class>
+
+<owl:NamedIndividual rdf:about="#indBarrasVertical">
+  <rdf:type rdf:resource="#GraficoBarrasVertical"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Grafico de Barras Vertical</tieneNombre>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indBarrasHorizontal">
+  <rdf:type rdf:resource="#GraficoBarrasHorizontal"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Grafico de Barras Horizontal</tieneNombre>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indTortaPastel">
+  <rdf:type rdf:resource="#GraficoTortaPastel"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Grafico de Torta / Pastel</tieneNombre>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indFrecuenciaAcumulada">
+  <rdf:type rdf:resource="#GraficoFrecuenciaAcumulada"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Grafico de Frecuencia Acumulada</tieneNombre>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indTreemap">
+  <rdf:type rdf:resource="#GraficoTreemap"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Treemap de Categorias</tieneNombre>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAgruparMinoritarias">
+  <rdf:type rdf:resource="#AgruparCategoriasMinoritarias"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indNoInformativa">
+  <rdf:type rdf:resource="#NoInformativaParaSegmentacion"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAptoSegmentacion">
+  <rdf:type rdf:resource="#AptoParaSegmentacion"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAlertaNulos">
+  <rdf:type rdf:resource="#AlertaNulosAltos"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAlertaDominante">
+  <rdf:type rdf:resource="#AlertaCategoriaDominante"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistBalanceada">
+  <rdf:type rdf:resource="#DistribucionBalanceada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistLevDesbalanceada">
+  <rdf:type rdf:resource="#DistribucionLevementeDesbalanceada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistDesbalanceada">
+  <rdf:type rdf:resource="#DistribucionDesbalanceada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistMuyDesbalanceada">
+  <rdf:type rdf:resource="#DistribucionMuyDesbalanceada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colGenero">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">genero</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.52</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.01</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colEstadoCivil">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">estado_civil</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.55</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.02</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colRegion">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">region</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">8</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.35</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.05</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colNivelEducacion">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">nivel_educacion</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">6</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.45</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.08</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colTipoPago">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">tipo_pago</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.85</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colCanalVenta">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">canal_venta</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.72</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colCiudad">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ciudad</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">45</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.12</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.03</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colCodigoPostal">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">codigo_postal</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">280</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.04</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.05</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colProducto">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">producto</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">22</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.18</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#colEstadoPedido">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneNombre rdf:datatype="http://www.w3.org/2001/XMLSchema#string">estado_pedido</tieneNombre>
+  <tieneCardinalidad rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</tieneCardinalidad>
+  <tieneRatioDominante rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.82</tieneRatioDominante>
+  <tieneRatioNulos rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.25</tieneRatioNulos>
+  <tieneTotalRegistros rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5000</tieneTotalRegistros>
+</owl:NamedIndividual>
+
+
+</rdf:RDF>

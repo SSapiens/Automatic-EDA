@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Entornos virtuales
+venv/
+.env
+.venv/
+env/
+
+# Node.js / Frontend
+node_modules/
+dist/
+.vite/
+
+# Archivos temporales de ontología (generados en runtime)
+backend/ontology.owx
+backend/*.owl
+backend/test_*.owx
+backend/test_*.owl
+
+# Docker volumes runtime
+.docker/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+owlready2==0.46
+pandas
+requests
+python-multipart
+python-dotenv
