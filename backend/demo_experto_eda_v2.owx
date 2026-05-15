@@ -1,0 +1,1744 @@
+<?xml version="1.0"?>
+<!--
+  ============================================================
+  ONTOLOGÍA EDA — Variables Categóricas  v2.0
+  Alineada con ontology_engine.py (owlready2 backend)
+
+  Cambios respecto a v1:
+    - tieneRatioNulos    (era tieneProporcionNulos)
+    - tieneTotalRegistros añadida
+    - tieneRatioDominante → xsd:decimal  (Python float)
+    - tieneRatioNulos    → xsd:decimal
+    - Individuos renombrados para coincidir con INDIVIDUAL_LABELS:
+        indTorta        → indTortaPastel
+        indBarras       → indBarrasVertical  +  indBarrasHorizontal (nuevo)
+        indAgrupar      → indAgruparMinoritarias
+        indNoInformativa→ indNoInformativa (igual)
+      Nuevos: indFrecuenciaAcumulada, indAptoSegmentacion,
+              indAlertaNulos, indAlertaDominante,
+              indDistBalanceada, indDistDesbalanceada,
+              indDistMuyDesbalanceada, indDistLevDesbalanceada
+    - Clases de distribución y segmentación añadidas con
+      owl:equivalentClass para activar la inferencia Pellet:
+        DistribucionBalanceada, DistribucionLevementeDesbalanceada,
+        DistribucionDesbalanceada, DistribucionMuyDesbalanceada,
+        AlertaNulosAltos, AlertaCategoriaDominante,
+        AptoParaSegmentacion, NoInformativaParaSegmentacion,
+        AgruparCategoriasMinoritarias
+    - ColumnaCardinalidadMuyAlta añadida (>100)
+    - Reglas SWRL S1–S6 actualizadas + SQWRL QS1–QS6 + Q1–Q5
+  ============================================================
+-->
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://www.semanticweb.org/eda/ontologies/demo_experto"
+         xmlns="http://www.semanticweb.org/eda/ontologies/demo_experto#"
+         xmlns:swrl="http://www.w3.org/2003/11/swrl#"
+         xmlns:swrlb="http://www.w3.org/2003/11/swrlb#"
+         xmlns:sqwrl="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#">
+
+<owl:Ontology rdf:about="http://www.semanticweb.org/eda/ontologies/demo_experto">
+  <rdfs:comment>Ontología experta para EDA de variables categóricas. v2.0</rdfs:comment>
+</owl:Ontology>
+
+
+<!-- ============================================================
+     PROPIEDADES DE OBJETO
+     ============================================================ -->
+
+<owl:ObjectProperty rdf:about="#sugiereTecnica">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Relaciona una columna con una técnica de visualización sugerida.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#tieneRecomendacion">
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="#Recomendacion"/>
+  <rdfs:comment>Relaciona una columna con una recomendación de preprocesado o análisis.</rdfs:comment>
+</owl:ObjectProperty>
+
+
+<!-- ============================================================
+     PROPIEDADES DE DATO
+     Nombres exactos que usa el backend ontology_engine.py
+     ============================================================ -->
+
+<!-- tieneCardinalidad: número de valores únicos (int) -->
+<owl:DatatypeProperty rdf:about="#tieneCardinalidad">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment>Número de categorías únicas en la columna.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<!-- tieneTotalRegistros: total de filas del dataset (int) -->
+<owl:DatatypeProperty rdf:about="#tieneTotalRegistros">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment>Total de registros del dataset (len del DataFrame).</rdfs:comment>
+</owl:DatatypeProperty>
+
+<!-- tieneRatioDominante: proporción de la categoría más frecuente [0,1] (double) -->
+<owl:DatatypeProperty rdf:about="#tieneRatioDominante">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment>Ratio de frecuencia de la categoría dominante (value_counts normalize iloc[0]).</rdfs:comment>
+</owl:DatatypeProperty>
+
+<!-- tieneRatioNulos: proporción de valores nulos [0,1] (double) — era tieneProporcionNulos -->
+<owl:DatatypeProperty rdf:about="#tieneRatioNulos">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#ColumnaCategorica"/>
+  <rdfs:range  rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment>Ratio de valores nulos (isnull().mean()). Nombre exacto esperado por ontology_engine.py.</rdfs:comment>
+</owl:DatatypeProperty>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Columnas
+     ============================================================ -->
+
+<owl:Class rdf:about="#ColumnaCategorica">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+  <rdfs:comment>Clase raíz: cualquier columna de tipo categórico analizable.</rdfs:comment>
+</owl:Class>
+
+<!-- ColumnaBinaria: exactamente 2 categorías -->
+<owl:Class rdf:about="#ColumnaBinaria">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</owl:hasValue>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Columna con exactamente 2 valores únicos.</rdfs:comment>
+</owl:Class>
+
+<!-- ColumnaCardinalidadBaja: 3–14 categorías -->
+<owl:Class rdf:about="#ColumnaCardinalidadBaja">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</xsd:minInclusive>
+                </rdf:Description>
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">14</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Columna con 3 a 14 categorías únicas.</rdfs:comment>
+</owl:Class>
+
+<!-- ColumnaCardinalidadAlta: 15–100 categorías -->
+<owl:Class rdf:about="#ColumnaCardinalidadAlta">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</xsd:minInclusive>
+                </rdf:Description>
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">100</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Columna con 15 a 100 categorías únicas.</rdfs:comment>
+</owl:Class>
+
+<!-- ColumnaCardinalidadMuyAlta: >100 categorías (ID-like) -->
+<owl:Class rdf:about="#ColumnaCardinalidadMuyAlta">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneCardinalidad"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">100</xsd:minExclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Columna con más de 100 categorías únicas. Probablemente un ID o código libre.</rdfs:comment>
+</owl:Class>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Distribución
+     Activadas por Pellet vía owl:equivalentClass con restricciones
+     sobre tieneRatioDominante
+     ============================================================ -->
+
+<owl:Class rdf:about="#DistribucionCategorica">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <rdfs:comment>Clase base para perfiles de distribución de frecuencias.</rdfs:comment>
+</owl:Class>
+
+<!-- Balanceada: ratio dominante ≤ 0.4 -->
+<owl:Class rdf:about="#DistribucionBalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.4</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Ratio dominante ≤ 0.4: distribución relativamente equilibrada.</rdfs:comment>
+</owl:Class>
+
+<!-- LevementeDesbalanceada: ratio dominante en (0.4, 0.6] -->
+<owl:Class rdf:about="#DistribucionLevementeDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.4</xsd:minExclusive>
+                </rdf:Description>
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.6</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Ratio dominante en (0.4, 0.6]: leve desbalance.</rdfs:comment>
+</owl:Class>
+
+<!-- Desbalanceada: ratio dominante en (0.6, 0.8] -->
+<owl:Class rdf:about="#DistribucionDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.6</xsd:minExclusive>
+                </rdf:Description>
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Ratio dominante en (0.6, 0.8]: desbalance notable.</rdfs:comment>
+</owl:Class>
+
+<!-- MuyDesbalanceada: ratio dominante > 0.8 -->
+<owl:Class rdf:about="#DistribucionMuyDesbalanceada">
+  <rdfs:subClassOf rdf:resource="#DistribucionCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:minExclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Ratio dominante > 0.8: una categoría concentra casi todos los registros.</rdfs:comment>
+</owl:Class>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Alertas
+     Activadas por Pellet vía owl:equivalentClass
+     ============================================================ -->
+
+<!-- AlertaNulosAltos: ratio de nulos > 0.20 -->
+<owl:Class rdf:about="#AlertaNulosAltos">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioNulos"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.2</xsd:minExclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>⚠ Alerta: ratio de nulos supera el 20%.</rdfs:comment>
+</owl:Class>
+
+<!-- AlertaCategoriaDominante: ratio dominante > 0.80 -->
+<owl:Class rdf:about="#AlertaCategoriaDominante">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:minExclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>⚠ Alerta: una categoría representa más del 80% de los registros.</rdfs:comment>
+</owl:Class>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Segmentación
+     ============================================================ -->
+
+<!-- AptoParaSegmentacion: cardinalidad 3–14 Y ratio dominante ≤ 0.8 -->
+<owl:Class rdf:about="#AptoParaSegmentacion">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCardinalidadBaja"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:maxInclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:maxInclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>✓ Apta para segmentación: cardinalidad baja y sin categoría dominante abrumadora.</rdfs:comment>
+</owl:Class>
+
+<!-- NoInformativaParaSegmentacion: ratio dominante > 0.80 -->
+<owl:Class rdf:about="#NoInformativaParaSegmentacion">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+        <owl:Restriction>
+          <owl:onProperty rdf:resource="#tieneRatioDominante"/>
+          <owl:someValuesFrom>
+            <rdfs:Datatype>
+              <owl:onDatatype rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+              <owl:withRestrictions rdf:parseType="Collection">
+                <rdf:Description>
+                  <xsd:minExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</xsd:minExclusive>
+                </rdf:Description>
+              </owl:withRestrictions>
+            </rdfs:Datatype>
+          </owl:someValuesFrom>
+        </owl:Restriction>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>✗ No informativa para segmentación por categoría dominante >80%.</rdfs:comment>
+</owl:Class>
+
+<!-- AgruparCategoriasMinoritarias: cardinalidad > 15 -->
+<owl:Class rdf:about="#AgruparCategoriasMinoritarias">
+  <rdfs:subClassOf rdf:resource="#ColumnaCategorica"/>
+  <owl:equivalentClass>
+    <owl:Class>
+      <owl:intersectionOf rdf:parseType="Collection">
+        <rdf:Description rdf:about="#ColumnaCardinalidadAlta"/>
+        <rdf:Description rdf:about="#ColumnaCategorica"/>
+      </owl:intersectionOf>
+    </owl:Class>
+  </owl:equivalentClass>
+  <rdfs:comment>Cardinalidad ≥15: agrupar categorías con frecuencia &lt;5% en "Otros" antes de visualizar.</rdfs:comment>
+</owl:Class>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Técnicas de visualización
+     ============================================================ -->
+
+<owl:Class rdf:about="#TecnicaVisualizacion">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoTortaPastel">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Gráfico de torta/pastel. Adecuado para columnas binarias o de muy baja cardinalidad.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoBarrasVertical">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Gráfico de barras vertical. Recomendado para cardinalidad baja.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoBarrasHorizontal">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Gráfico de barras horizontal. Preferido cuando las etiquetas son largas o cardinalidad media.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoFrecuenciaAcumulada">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Curva de frecuencia acumulada (ECDF). Útil para analizar concentración de categorías.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#GraficoTreemap">
+  <rdfs:subClassOf rdf:resource="#TecnicaVisualizacion"/>
+  <rdfs:comment>Treemap. Recomendado para alta cardinalidad donde barras se vuelven ilegibles.</rdfs:comment>
+</owl:Class>
+
+
+<!-- ============================================================
+     JERARQUÍA DE CLASES — Recomendaciones de preprocesado
+     ============================================================ -->
+
+<owl:Class rdf:about="#Recomendacion">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#AgruparCategorias">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#NoInformativa">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#SegmentacionRecomendada">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+<owl:Class rdf:about="#AlertaCalidadDatos">
+  <rdfs:subClassOf rdf:resource="#Recomendacion"/>
+</owl:Class>
+
+
+<!-- ============================================================
+     INDIVIDUOS — Técnicas de visualización
+     Nombres exactos del diccionario INDIVIDUAL_LABELS del backend
+     ============================================================ -->
+
+<owl:NamedIndividual rdf:about="#indTortaPastel">
+  <rdf:type rdf:resource="#GraficoTortaPastel"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indBarrasVertical">
+  <rdf:type rdf:resource="#GraficoBarrasVertical"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indBarrasHorizontal">
+  <rdf:type rdf:resource="#GraficoBarrasHorizontal"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indFrecuenciaAcumulada">
+  <rdf:type rdf:resource="#GraficoFrecuenciaAcumulada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indTreemap">
+  <rdf:type rdf:resource="#GraficoTreemap"/>
+</owl:NamedIndividual>
+
+
+<!-- ============================================================
+     INDIVIDUOS — Recomendaciones
+     ============================================================ -->
+
+<owl:NamedIndividual rdf:about="#indAgruparMinoritarias">
+  <rdf:type rdf:resource="#AgruparCategorias"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indNoInformativa">
+  <rdf:type rdf:resource="#NoInformativa"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAptoSegmentacion">
+  <rdf:type rdf:resource="#SegmentacionRecomendada"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAlertaNulos">
+  <rdf:type rdf:resource="#AlertaCalidadDatos"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indAlertaDominante">
+  <rdf:type rdf:resource="#AlertaCalidadDatos"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistBalanceada">
+  <rdf:type rdf:resource="#Recomendacion"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistDesbalanceada">
+  <rdf:type rdf:resource="#Recomendacion"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistMuyDesbalanceada">
+  <rdf:type rdf:resource="#Recomendacion"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#indDistLevDesbalanceada">
+  <rdf:type rdf:resource="#Recomendacion"/>
+</owl:NamedIndividual>
+
+
+<!-- ============================================================
+     INDIVIDUOS DE EJEMPLO — para probar en Protégé / SQWRL
+     Incluyen tieneRatioNulos y tieneTotalRegistros (nuevos)
+     ============================================================ -->
+
+<owl:NamedIndividual rdf:about="#ejemplo_Sexo">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.52</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.01</tieneRatioNulos>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#ejemplo_ID_Cliente">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">200</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.01</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.0</tieneRatioNulos>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#ejemplo_Medicamento">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.45</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.05</tieneRatioNulos>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#ejemplo_VariableDominante">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.85</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.03</tieneRatioNulos>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#ejemplo_Region">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">8</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.35</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.0</tieneRatioNulos>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#ejemplo_CodigoPostal">
+  <rdf:type rdf:resource="#ColumnaCategorica"/>
+  <tieneCardinalidad    rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">120</tieneCardinalidad>
+  <tieneTotalRegistros  rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1000</tieneTotalRegistros>
+  <tieneRatioDominante  rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.04</tieneRatioDominante>
+  <tieneRatioNulos      rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.25</tieneRatioNulos>
+</owl:NamedIndividual>
+
+
+<!-- ============================================================
+     VARIABLES SWRL
+     ============================================================ -->
+
+<swrl:Variable rdf:about="urn:swrl#c"/>
+<swrl:Variable rdf:about="urn:swrl#n"/>
+<swrl:Variable rdf:about="urn:swrl#r"/>
+<swrl:Variable rdf:about="urn:swrl#nulos"/>
+
+
+<!-- ============================================================
+     REGLAS DE INFERENCIA SWRL  (S1 – S6)
+     Head: producen tripletas → ejecutar con Pellet, no con SQWRL
+     ============================================================ -->
+
+<!--
+  S1: Columna binaria → sugerir gráfico de torta/pastel
+  ColumnaCategorica(?c) ^ tieneCardinalidad(?c, 2) -> sugiereTecnica(?c, indTortaPastel)
+-->
+<swrl:Imp>
+  <rdfs:label>S1_Binaria_Torta</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</swrl:argument2>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#sugiereTecnica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indTortaPastel"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!--
+  S2: Cardinalidad baja (3-14) → sugerir barras vertical
+  ColumnaCategorica(?c) ^ tieneCardinalidad(?c,?n) ^ swrlb:greaterThan(?n,2) ^ swrlb:lessThanOrEqual(?n,14)
+  -> sugiereTecnica(?c, indBarrasVertical)
+-->
+<swrl:Imp>
+  <rdfs:label>S2_CardBaja_BarrasVertical</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first>
+                    <swrl:BuiltinAtom>
+                      <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#lessThanOrEqual"/>
+                      <swrl:arguments>
+                        <rdf:Description>
+                          <rdf:first rdf:resource="urn:swrl#n"/>
+                          <rdf:rest>
+                            <rdf:Description>
+                              <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">14</rdf:first>
+                              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                            </rdf:Description>
+                          </rdf:rest>
+                        </rdf:Description>
+                      </swrl:arguments>
+                    </swrl:BuiltinAtom>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#sugiereTecnica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indBarrasVertical"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!--
+  S3: Ratio dominante > 0.8 → columna no informativa para segmentación
+  ColumnaCategorica(?c) ^ tieneRatioDominante(?c,?r) ^ swrlb:greaterThan(?r,0.8)
+  -> tieneRecomendacion(?c, indNoInformativa)
+-->
+<swrl:Imp>
+  <rdfs:label>S3_Dominante_NoInformativa</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneRatioDominante"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#r"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#r"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#tieneRecomendacion"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indNoInformativa"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!--
+  S4: Cardinalidad > 15 → sugerir treemap
+  ColumnaCategorica(?c) ^ tieneCardinalidad(?c,?n) ^ swrlb:greaterThan(?n,15)
+  -> sugiereTecnica(?c, indTreemap)
+-->
+<swrl:Imp>
+  <rdfs:label>S4_CardAlta_Treemap</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#sugiereTecnica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indTreemap"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!--
+  S5: Cardinalidad > 15 → recomendar agrupar categorías minoritarias
+  ColumnaCategorica(?c) ^ tieneCardinalidad(?c,?n) ^ swrlb:greaterThan(?n,15)
+  -> tieneRecomendacion(?c, indAgruparMinoritarias)
+-->
+<swrl:Imp>
+  <rdfs:label>S5_CardAlta_AgruparMinoritarias</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#tieneRecomendacion"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indAgruparMinoritarias"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!--
+  S6: Ratio de nulos > 0.20 → alerta de calidad de datos
+  ColumnaCategorica(?c) ^ tieneRatioNulos(?c,?nulos) ^ swrlb:greaterThan(?nulos,0.2)
+  -> tieneRecomendacion(?c, indAlertaNulos)
+-->
+<swrl:Imp>
+  <rdfs:label>S6_Nulos_Alerta</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneRatioNulos"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#nulos"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#nulos"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.2</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:IndividualPropertyAtom>
+          <swrl:propertyPredicate rdf:resource="#tieneRecomendacion"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+          <swrl:argument2 rdf:resource="#indAlertaNulos"/>
+        </swrl:IndividualPropertyAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+
+<!-- ============================================================
+     QUERIES SQWRL  Q1 – Q5  (consultas originales conservadas)
+     ============================================================ -->
+
+<!-- Q1: Listar columnas binarias -->
+<swrl:Imp>
+  <rdfs:label>Q1_Listar_Binarias</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</swrl:argument2>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- Q2: Cardinalidad alta (> 15) -->
+<swrl:Imp>
+  <rdfs:label>Q2_Cardinalidad_Alta</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#n"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- Q3: Muy desbalanceadas (ratio dominante > 0.8) -->
+<swrl:Imp>
+  <rdfs:label>Q3_Muy_Desbalanceadas</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneRatioDominante"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#r"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#r"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#r"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- Q4: Alerta múltiple (nulos altos Y categoría dominante) -->
+<swrl:Imp>
+  <rdfs:label>Q4_Alerta_Multiple</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#AlertaNulosAltos"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:ClassAtom>
+              <swrl:classPredicate rdf:resource="#AlertaCategoriaDominante"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+            </swrl:ClassAtom>
+          </rdf:first>
+          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- Q5: Aptas para segmentación (cardinalidad ≤ 10) -->
+<swrl:Imp>
+  <rdfs:label>Q5_Aptas_Segmentacion</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#lessThanOrEqual"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">10</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#n"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+
+<!-- ============================================================
+     QUERIES SQWRL  QS1 – QS6  (espejo consultable de S1–S6)
+     ============================================================ -->
+
+<!-- QS1: Binarias que recibirán indTortaPastel -->
+<swrl:Imp>
+  <rdfs:label>QS1_Binarias_SugierenTorta</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</swrl:argument2>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- QS2: Cardinalidad baja (3-14) → barras vertical -->
+<swrl:Imp>
+  <rdfs:label>QS2_CardBaja_BarrasVertical</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first>
+                    <swrl:BuiltinAtom>
+                      <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#lessThanOrEqual"/>
+                      <swrl:arguments>
+                        <rdf:Description>
+                          <rdf:first rdf:resource="urn:swrl#n"/>
+                          <rdf:rest>
+                            <rdf:Description>
+                              <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">14</rdf:first>
+                              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                            </rdf:Description>
+                          </rdf:rest>
+                        </rdf:Description>
+                      </swrl:arguments>
+                    </swrl:BuiltinAtom>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#n"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- QS3: Dominantes no informativas (ratio > 0.8) -->
+<swrl:Imp>
+  <rdfs:label>QS3_Dominantes_NoInformativas</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneRatioDominante"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#r"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#r"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.8</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#r"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- QS4: Alta cardinalidad → treemap + agrupar minoritarias -->
+<swrl:Imp>
+  <rdfs:label>QS4_AltaCardinalidad_Treemap</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneCardinalidad"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#n"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#n"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">15</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#n"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- QS5: Alertas por nulos altos (ratio > 0.2) -->
+<swrl:Imp>
+  <rdfs:label>QS5_Nulos_Altos</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#ColumnaCategorica"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:DatavaluedPropertyAtom>
+              <swrl:propertyPredicate rdf:resource="#tieneRatioNulos"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+              <swrl:argument2 rdf:resource="urn:swrl#nulos"/>
+            </swrl:DatavaluedPropertyAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:BuiltinAtom>
+                  <swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/>
+                  <swrl:arguments>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#nulos"/>
+                      <rdf:rest>
+                        <rdf:Description>
+                          <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">0.2</rdf:first>
+                          <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:Description>
+                      </rdf:rest>
+                    </rdf:Description>
+                  </swrl:arguments>
+                </swrl:BuiltinAtom>
+              </rdf:first>
+              <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#nulos"/>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+<!-- QS6: Alerta doble (nulos altos Y categoría dominante) — espejo de Q4 con variables -->
+<swrl:Imp>
+  <rdfs:label>QS6_Alerta_Multiple</rdfs:label>
+  <swrl:body>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:ClassAtom>
+          <swrl:classPredicate rdf:resource="#AlertaNulosAltos"/>
+          <swrl:argument1 rdf:resource="urn:swrl#c"/>
+        </swrl:ClassAtom>
+      </rdf:first>
+      <rdf:rest>
+        <rdf:Description>
+          <rdf:first>
+            <swrl:ClassAtom>
+              <swrl:classPredicate rdf:resource="#AlertaCategoriaDominante"/>
+              <swrl:argument1 rdf:resource="urn:swrl#c"/>
+            </swrl:ClassAtom>
+          </rdf:first>
+          <rdf:rest>
+            <rdf:Description>
+              <rdf:first>
+                <swrl:DatavaluedPropertyAtom>
+                  <swrl:propertyPredicate rdf:resource="#tieneRatioNulos"/>
+                  <swrl:argument1 rdf:resource="urn:swrl#c"/>
+                  <swrl:argument2 rdf:resource="urn:swrl#nulos"/>
+                </swrl:DatavaluedPropertyAtom>
+              </rdf:first>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first>
+                    <swrl:DatavaluedPropertyAtom>
+                      <swrl:propertyPredicate rdf:resource="#tieneRatioDominante"/>
+                      <swrl:argument1 rdf:resource="urn:swrl#c"/>
+                      <swrl:argument2 rdf:resource="urn:swrl#r"/>
+                    </swrl:DatavaluedPropertyAtom>
+                  </rdf:first>
+                  <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </rdf:rest>
+        </rdf:Description>
+      </rdf:rest>
+    </rdf:Description>
+  </swrl:body>
+  <swrl:head>
+    <rdf:Description>
+      <rdf:first>
+        <swrl:BuiltinAtom>
+          <swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/>
+          <swrl:arguments>
+            <rdf:Description>
+              <rdf:first rdf:resource="urn:swrl#c"/>
+              <rdf:rest>
+                <rdf:Description>
+                  <rdf:first rdf:resource="urn:swrl#nulos"/>
+                  <rdf:rest>
+                    <rdf:Description>
+                      <rdf:first rdf:resource="urn:swrl#r"/>
+                      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:Description>
+                  </rdf:rest>
+                </rdf:Description>
+              </rdf:rest>
+            </rdf:Description>
+          </swrl:arguments>
+        </swrl:BuiltinAtom>
+      </rdf:first>
+      <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+    </rdf:Description>
+  </swrl:head>
+</swrl:Imp>
+
+</rdf:RDF>
