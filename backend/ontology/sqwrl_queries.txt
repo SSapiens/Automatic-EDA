@@ -1,0 +1,13 @@
+=== CONSULTAS SQWRL PARA PROTEGE ===
+
+Copia estas consultas en la pestaña 'SQWRLTab' de Protégé:
+
+--- Q01_ListarBinarias ---
+ColumnaCategorica(?c), tieneCardinalidad(?c, 2) -> sqwrl:select(?c)
+
+--- Q02_SugerirTreemap ---
+ColumnaCategorica(?c), tieneCardinalidad(?c, ?n), swrlb:greaterThan(?n, 15) -> sqwrl:select(?c)
+
+--- Q03_Desbalanceadas ---
+ColumnaCategorica(?c), tieneRatioDominante(?c, ?r), swrlb:greaterThan(?r, 0.8) -> sqwrl:select(?c)
+

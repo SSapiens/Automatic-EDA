@@ -5,3 +5,5 @@ pandas
 requests
 python-multipart
 python-dotenv
+scikit-learn
+mlxtend

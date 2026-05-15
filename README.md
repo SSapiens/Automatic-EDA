@@ -2,6 +2,23 @@
 
 Un sistema de **Análisis Exploratorio de Datos (EDA)** basado en conocimiento experto, construido sobre una ontología OWL con razonamiento automático y un asistente RAG impulsado por LLM local (Ollama).
 
+## Cumplimiento Académico (GESCON)
+
+Este proyecto ha sido diseñado para cumplir con los requisitos del examen GESCON, integrando múltiples paradigmas de gestión del conocimiento.
+
+### 🎯 Mapeo de Objetivos Académicos
+
+| Requisito | Implementación | Archivos Relacionados |
+|---|---|---|
+| **Dataset Seleccionado** | `flight_price.csv` (recortado a 1000 registros) | `backend/data/flight_price.csv` |
+| **Extracción de Reglas (ML)** | Árboles de Decisión y Reglas de Asociación (Apriori) | `backend/ml/rule_extraction.py` |
+| **Representación Ontológica** | Modelo OWL DL con razonamiento automático (Pellet) | `demo_experto_eda.owx` |
+| **Representación Alternativa** | Lógica en Prolog (OAV + Proposiciones) | `backend/prolog/eda_expert.pl` |
+| **Consultas Complejas** | Consultas SQWRL de nivel medio-alto | `backend/ontology/sqwrl_queries.txt` |
+| **Inferencia Demostrada** | Inferencia en OWL (Pellet) y en Prolog | Ver secciones de ejecución |
+
+---
+
 ---
 
 ## ¿Qué hace?
@@ -359,3 +376,25 @@ Para facilitar la sustentación, el archivo `demo_experto_eda.owx` incluye **ind
 3.  **Inicia el Razonador** (Pellet).
 4.  **Observa la Inferencia:** Los individuos se clasificarán automáticamente (aparecerán en amarillo) y se les asignarán las propiedades `sugiereTecnica` y `tieneRecomendacion` según la lógica experta.
 
+
+## Ejecución de Componentes Académicos
+
+### 1. Minería de Datos (Python)
+Para extraer las reglas del dataset de vuelos, ejecuta el script dentro del contenedor del backend:
+```bash
+docker exec -it examengescon-backend-1 python3 /app/ml/rule_extraction.py
+```
+Las reglas se guardarán en `backend/ml/reglas_extraidas.txt`.
+
+### 2. Inferencia Lógica (Prolog)
+Para demostrar las inferencias en Prolog, utiliza SWI-Prolog con el archivo de conocimiento:
+```bash
+swipl -s backend/prolog/eda_expert.pl
+# Ejemplo de consulta:
+# ?- sugiere_tecnica(airline, T).
+```
+
+### 3. Consultas SQWRL (Protégé)
+Las consultas SQWRL están documentadas en `backend/ontology/sqwrl_queries.txt`. Puedes copiarlas y pegarlas en la pestaña **SQWRLTab** de Protégé mientras tienes abierta la ontología `demo_experto_eda.owx`.
+
+---
