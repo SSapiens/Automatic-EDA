@@ -2,11 +2,12 @@ FROM python:3.10-slim-bookworm
 
 WORKDIR /app
 
-# Use Bookworm stable to ensure package availability
+# Install JRE for Pellet, SWI-Prolog for logic inference, and build-essential for C extensions
 RUN apt-get update && mkdir -p /usr/share/man/man1 && \
     apt-get install -y --no-install-recommends \
     build-essential \
     default-jre-headless \
+    swi-prolog \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

@@ -1,14 +1,14 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import os
-import requests
 import io
 from ontology_engine import OntologyEngine
+from ml_engine import MLEngine
+from prolog_engine import PrologEngine
 
-app = FastAPI(title="EDA Ontology Expert API", version="1.0.0")
+app = FastAPI(title="EDA Knowledge Workbench API", version="2.0.0")
 
-# CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,64 +21,65 @@ ONTOLOGY_PATH = os.getenv("ONTOLOGY_PATH", "/app/ontology.owx")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 MODEL_NAME = os.getenv("MODEL_NAME", "llama3.2")
 
-# Initialize Engine
 engine = OntologyEngine(ONTOLOGY_PATH)
 
-# Global store for current analysis (simplified for demo)
-current_analysis = []
+# Store temporary dataframes in memory (for demo purposes)
+# In production, use Redis or a temp file
+temp_storage = {}
 
 @app.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
-    global current_analysis
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="Only CSV files allowed")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        df = pd.read_csv(io.BytesIO(content))
+        
+        # Save to temp storage (use filename as key)
+        file_id = file.filename
+        temp_storage[file_id] = df
+        
+        return {
+            "filename": file.filename,
+            "columns": df.columns.tolist(),
+            "sample": df.head(5).to_dict(orient="records")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/analyze")
+async def analyze_full(filename: str = Form(...), target_column: str = Form(...)):
+    if filename not in temp_storage:
+        raise HTTPException(status_code=404, detail="File not found. Please upload again.")
     
-    content = await file.read()
-    df = pd.read_csv(io.BytesIO(content))
+    df = temp_storage[filename]
     
     try:
-        current_analysis = engine.analyze_csv(df)
-        return {"message": "File processed", "results": current_analysis}
+        # 1. Ontology Analysis (Structural Knowledge)
+        ontology_results = engine.analyze_csv(df)
+        
+        # 2. ML Rule Extraction (Domain Knowledge)
+        ml_results = MLEngine.extract_rules(df, target_column)
+        
+        # 3. Prolog Inference (Alternative Formal Logic)
+        prolog_results = PrologEngine.infer(ontology_results)
+        
+        return {
+            "ontology": ontology_results,
+            "ml": ml_results,
+            "prolog": prolog_results
+        }
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/ask")
-async def ask_rag(question: str):
-    if not current_analysis:
-        raise HTTPException(status_code=400, detail="No data analyzed yet. Upload a CSV first.")
-    
-    # Build Context from Ontology Inferences
-    context = engine.get_knowledge_context(current_analysis)
-    
-    prompt = f"""Eres un experto en Analisis Exploratorio de Datos (EDA). 
-Basate UNICAMENTE en el contexto de la ontologia proporcionado para responder la pregunta del usuario. 
-Si la informacion no esta en el contexto, usa tu conocimiento general pero indica que es una sugerencia externa.
-
-CONTEXTO DE LA ONTOLOGIA:
-{context}
-
-PREGUNTA DEL USUARIO:
-{question}
-
-RESPUESTA EXPERTA:"""
-
+async def ask_rag(question: str = Form(...), context: str = Form(...)):
+    # Re-using the RAG logic
+    import requests
+    prompt = f"Context: {context}\n\nQuestion: {question}\n\nAnswer based on EDA knowledge and the context provided:"
     try:
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": MODEL_NAME,
-                "prompt": prompt,
-                "stream": False
-            },
-            timeout=60
+            json={"model": MODEL_NAME, "prompt": prompt, "stream": False}
         )
-        response.raise_for_status()
-        return {"answer": response.json().get("response")}
+        return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error connecting to Ollama: {str(e)}")
-
-@app.get("/status")
-def get_status():
-    return {"status": "online", "ontology_loaded": engine.onto is not None}
+        return {"response": f"Error connecting to Ollama: {str(e)}"}
