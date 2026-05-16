@@ -6,18 +6,23 @@ Este proyecto es una plataforma integral de **Gestión del Conocimiento** diseñ
 
 ## 🏗️ Arquitectura del Sistema y Flujo de Datos
 
-El sistema utiliza una arquitectura desacoplada donde el conocimiento fluye a través de múltiples motores de razonamiento:
+El sistema opera bajo un pipeline de **transformación de conocimiento** donde el dato crudo evoluciona hacia sabiduría accionable a través de cuatro capas:
 
-1.  **Capa de Presentación (React + Vite)**: Interfaz premium para la carga de datasets y visualización de perfiles inferidos.
-2.  **Capa de Orquestación (FastAPI)**:
-    *   **OntologyEngine**: Realiza el perfilamiento estadístico y la inferencia ontológica.
-    *   **PrologEngine**: Traduce métricas a hechos Objeto-Atributo-Valor (OAV) para validación lógica.
-    *   **MLEngine**: Extrae reglas de asociación y dependencias mediante Árboles de Decisión.
-    *   **RAGEngine**: Procesa consultas en lenguaje natural fundamentándose en los resultados de los motores anteriores.
-3.  **Capa de Inferencia**:
-    *   **OWL 2 DL**: Clasificación semántica de variables.
-    *   **SWI-Prolog**: Razonamiento sobre la calidad y coherencia del dato.
-    *   **Llama 3.2 (Ollama)**: Generación de lenguaje natural fundamentado.
+### 1. Capa de Extracción y Perfilamiento (Python + Pandas)
+*   **Proceso**: El CSV cargado es procesado por el `OntologyEngine`. Se calculan métricas de tendencia central, dispersión (IQR), asimetría (Skewness) y matrices de correlación de Pearson.
+*   **Resultado**: Un diccionario de metadatos técnicos que sirve de base para la semantización.
+
+### 2. Capa de Semantización e Inferencia Ontológica (OWL 2 DL)
+*   **Proceso**: Los metadatos se transforman en **Individuos OWL** dentro del `OntologyEngine`. Cada columna del dataset se inyecta como una instancia de `ColumnaNumerica`.
+*   **Razonamiento**: Al cargar los individuos, el motor de razonamiento (Pellet/HermiT) evalúa los **Axiomas de Clase (EquivalentClasses)**. Si una columna tiene `asimetria > 1.0`, el sistema la clasifica automáticamente como `ColumnaAsimetrica`, disparando por herencia las recomendaciones de visualización lógica.
+
+### 3. Capa de Lógica Formal y Validación (Prolog OAV)
+*   **Proceso**: El `PrologEngine` traduce el estado actual de los individuos a hechos en formato **Objeto-Atributo-Valor** (ej: `atributo(precipitation, outliers, alto)`).
+*   **Inferencia**: Se ejecutan reglas de lógica de primer orden en `eda_expert.pl` para detectar inconsistencias que las ontologías no ven fácilmente, como la validación cruzada de reglas de calidad.
+
+### 4. Capa de Explicabilidad y RAG (Ollama + LangChain)
+*   **Proceso**: El `RAGEngine` actúa como la interfaz de "sentido común". Cuando el usuario pregunta, el LLM no "alucina"; consulta el **Grafo de Conocimiento** generado en las fases anteriores.
+*   **Resultado**: Respuestas fundamentadas del tipo: *"Sugiero un Histograma Logarítmico para 'precipitation' porque la ontología la clasificó como altamente sesgada (3.51) y Prolog validó una presencia crítica de outliers"*.
 
 ---
 
