@@ -4,7 +4,6 @@ services:
     network_mode: "host"
     volumes:
       - ./backend:/app
-      - ./ontologia_variables_categoricas_corregida.owx:/app/ontology.owx
     environment:
       - OLLAMA_URL=http://localhost:11434
       - MODEL_NAME=llama3.2

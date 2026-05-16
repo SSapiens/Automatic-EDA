@@ -5,42 +5,42 @@ class PrologEngine:
     @staticmethod
     def infer(metadata_list):
         """
-        metadata_list: list of dicts like {'column': 'name', 'cardinality': 5, 'ratio_dominante': 0.4, ...}
+        metadata_list: list of dicts like {'column': 'name', 'asimetria': 1.2, 'ratio_outliers': 0.08, 'max_corr': 0.5}
         """
         # 1. Generate OAV Facts
         facts = []
         for meta in metadata_list:
             col_name = "".join(x for x in meta['column'] if x.isalnum()).lower()
-            facts.append(f"atributo({col_name}, cardinalidad, {meta['cardinality']}).")
-            facts.append(f"atributo({col_name}, ratio_dominante, {meta['ratio_dominante']}).")
-            facts.append(f"atributo({col_name}, ratio_nulos, {meta['ratio_nulos']}).")
+            facts.append(f"atributo({col_name}, asimetria, {meta.get('asimetria', 0.0)}).")
+            facts.append(f"atributo({col_name}, ratio_outliers, {meta.get('ratio_outliers', 0.0)}).")
+            facts.append(f"atributo({col_name}, correlacion_max, {meta.get('max_corr', 0.0)}).")
+            facts.append(f"atributo({col_name}, ratio_nulos, {meta.get('ratio_nulos', 0.0)}).")
         
         facts_text = "\n".join(facts)
         
-        # 2. Define Expert Rules (Hardcoded for the demo to be robust)
+        # 2. Define Expert Rules (Numerical EDA logic)
         rules = """
-% Reglas de Inferencia EDA
-es_binaria(X) :- atributo(X, cardinalidad, 2).
-es_card_baja(X) :- atributo(X, cardinalidad, N), N > 2, N =< 5.
-es_card_media(X) :- atributo(X, cardinalidad, N), N > 5, N =< 15.
-es_card_alta(X) :- atributo(X, cardinalidad, N), N > 15.
-es_desbalanceada(X) :- atributo(X, ratio_dominante, R), R > 0.8.
+% Reglas de Inferencia EDA Numérica
+es_sesgada(X) :- atributo(X, asimetria, A), (A > 1.0 ; A < -1.0).
+es_normal(X) :- atributo(X, asimetria, A), A > -0.5, A < 0.5.
+tiene_outliers(X) :- atributo(X, ratio_outliers, R), R > 0.05.
+alta_correlacion(X) :- atributo(X, correlacion_max, C), C > 0.7.
 
-sugiere_tecnica(X, torta_pastel) :- es_binaria(X).
-sugiere_tecnica(X, barras_vertical) :- es_card_baja(X).
-sugiere_tecnica(X, barras_horizontal) :- es_card_media(X).
-sugiere_tecnica(X, treemap) :- es_card_alta(X).
+sugiere_tecnica(X, histograma_log) :- es_sesgada(X).
+sugiere_tecnica(X, histograma_estandar) :- es_normal(X).
+sugiere_tecnica(X, boxplot) :- tiene_outliers(X).
+sugiere_tecnica(X, scatter_plot) :- alta_correlacion(X).
 """
         
-        temp_file = "/tmp/demo_prolog.pl"
-        with open(temp_file, "w") as f:
-            f.write(facts_text + "\n" + rules)
-        
-        # 3. Execute Inferences via CLI
-        # Query: Get all suggestions
-        query = "findall(suggestion(X, T), sugiere_tecnica(X, T), L), write(L), halt."
-        
+        # Using a safer temp path for the workspace
+        temp_file = "temp_prolog_rules.pl"
         try:
+            with open(temp_file, "w") as f:
+                f.write(facts_text + "\n" + rules)
+            
+            # 3. Execute Inferences via CLI
+            query = "findall(suggestion(X, T), sugiere_tecnica(X, T), L), write(L), halt."
+            
             result = subprocess.check_output(
                 ["swipl", "-s", temp_file, "-g", query],
                 stderr=subprocess.STDOUT,

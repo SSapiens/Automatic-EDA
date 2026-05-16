@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://www.semanticweb.org/eda/ontologies/demo_experto"
+         xmlns="http://www.semanticweb.org/eda/ontologies/demo_experto#"
+         xmlns:swrl="http://www.w3.org/2003/11/swrl#"
+         xmlns:swrlb="http://www.w3.org/2003/11/swrlb#"
+         xmlns:sqwrl="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#">
+
+<owl:Ontology rdf:about="http://www.semanticweb.org/eda/ontologies/demo_experto">
+    <rdfs:comment>Ontología Experta EDA - Seattle Weather. v3.8 (FULL STACK RULES)</rdfs:comment>
+</owl:Ontology>
+
+<!-- Propiedades (xsd:double para compatibilidad total) -->
+<owl:ObjectProperty rdf:about="#sugiereTecnica"/>
+<owl:DatatypeProperty rdf:about="#tieneAsimetria"><rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/><rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/></owl:DatatypeProperty>
+<owl:DatatypeProperty rdf:about="#tieneRatioOutliers"><rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/><rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/></owl:DatatypeProperty>
+<owl:DatatypeProperty rdf:about="#tieneCorrelacionMaxima"><rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/><rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#double"/></owl:DatatypeProperty>
+
+<!-- Clases -->
+<owl:Class rdf:about="#ColumnaNumerica"/>
+<owl:Class rdf:about="#TecnicaVisualizacion"/>
+
+<!-- Individuos Técnicas -->
+<owl:NamedIndividual rdf:about="#indHistogramaEst"><rdf:type rdf:resource="#TecnicaVisualizacion"/></owl:NamedIndividual>
+<owl:NamedIndividual rdf:about="#indHistogramaLog"><rdf:type rdf:resource="#TecnicaVisualizacion"/></owl:NamedIndividual>
+<owl:NamedIndividual rdf:about="#indBoxPlot"><rdf:type rdf:resource="#TecnicaVisualizacion"/></owl:NamedIndividual>
+<owl:NamedIndividual rdf:about="#indScatterPlot"><rdf:type rdf:resource="#TecnicaVisualizacion"/></owl:NamedIndividual>
+
+<!-- Individuos Seattle Weather (Ejemplos Demo) -->
+<owl:NamedIndividual rdf:about="#var_precipitation">
+    <rdf:type rdf:resource="#ColumnaNumerica"/>
+    <tieneAsimetria rdf:datatype="http://www.w3.org/2001/XMLSchema#double">3.45</tieneAsimetria>
+    <tieneRatioOutliers rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.12</tieneRatioOutliers>
+    <tieneCorrelacionMaxima rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.32</tieneCorrelacionMaxima>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#var_temp_max">
+    <rdf:type rdf:resource="#ColumnaNumerica"/>
+    <tieneAsimetria rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.15</tieneAsimetria>
+    <tieneRatioOutliers rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.01</tieneRatioOutliers>
+    <tieneCorrelacionMaxima rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.88</tieneCorrelacionMaxima>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#var_temp_min">
+    <rdf:type rdf:resource="#ColumnaNumerica"/>
+    <tieneAsimetria rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-0.25</tieneAsimetria>
+    <tieneRatioOutliers rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.00</tieneRatioOutliers>
+    <tieneCorrelacionMaxima rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.88</tieneCorrelacionMaxima>
+</owl:NamedIndividual>
+
+<!-- VARIABLES -->
+<swrl:Variable rdf:about="urn:swrl#c"/><swrl:Variable rdf:about="urn:swrl#a"/><swrl:Variable rdf:about="urn:swrl#o"/><swrl:Variable rdf:about="urn:swrl#corr"/><swrl:Variable rdf:about="urn:swrl#t"/>
+
+<!-- REGLAS DE PRODUCCIÓN (S) -->
+
+<!-- S1: Histograma Log (Sesgo > 1.0) -->
+<swrl:Imp><swrl:body><rdf:Description><rdf:first><swrl:ClassAtom><swrl:classPredicate rdf:resource="#ColumnaNumerica"/><swrl:argument1 rdf:resource="urn:swrl#c"/></swrl:ClassAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneAsimetria"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#a"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#a"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indHistogramaLog"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- S2: Histograma Estándar (|Sesgo| < 0.5) -->
+<swrl:Imp><swrl:body><rdf:Description><rdf:first><swrl:ClassAtom><swrl:classPredicate rdf:resource="#ColumnaNumerica"/><swrl:argument1 rdf:resource="urn:swrl#c"/></swrl:ClassAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneAsimetria"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#a"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#lessThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#a"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.5</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#a"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-0.5</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indHistogramaEst"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- S3: BoxPlot (Outliers > 0.05) -->
+<swrl:Imp><swrl:body><rdf:Description><rdf:first><swrl:ClassAtom><swrl:classPredicate rdf:resource="#ColumnaNumerica"/><swrl:argument1 rdf:resource="urn:swrl#c"/></swrl:ClassAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneRatioOutliers"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#o"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#o"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.05</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indBoxPlot"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- S4: ScatterPlot (Correlación > 0.7) -->
+<swrl:Imp><swrl:body><rdf:Description><rdf:first><swrl:ClassAtom><swrl:classPredicate rdf:resource="#ColumnaNumerica"/><swrl:argument1 rdf:resource="urn:swrl#c"/></swrl:ClassAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneCorrelacionMaxima"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#corr"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#corr"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.7</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indScatterPlot"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- CONSULTAS DE RECUPERACIÓN (Q) -->
+
+<!-- Q1: Identificar Predictores Ideales -->
+<swrl:Imp><rdfs:label>Q1_Identificar_Predictores_Ideales</rdfs:label><swrl:body><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indHistogramaEst"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:IndividualPropertyAtom><swrl:propertyPredicate rdf:resource="#sugiereTecnica"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="#indScatterPlot"/></swrl:IndividualPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneCorrelacionMaxima"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#corr"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#c"/><rdf:rest><rdf:Description><rdf:first rdf:resource="urn:swrl#corr"/><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- Q2: Alerta Calidad Extrema -->
+<swrl:Imp><rdfs:label>Q2_Alerta_Calidad_Extrema</rdfs:label><swrl:body><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneAsimetria"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#a"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneRatioOutliers"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#o"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#a"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://www.w3.org/2003/11/swrlb#greaterThan"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#o"/><rdf:rest><rdf:Description><rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.10</rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#select"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#c"/><rdf:rest><rdf:Description><rdf:first rdf:resource="urn:swrl#a"/><rdf:rest><rdf:Description><rdf:first rdf:resource="urn:swrl#o"/><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></rdf:rest></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+<!-- Q3: Promedio Correlación Dataset -->
+<swrl:Imp><rdfs:label>Q3_Estadisticas_Agregadas</rdfs:label><swrl:body><rdf:Description><rdf:first><swrl:ClassAtom><swrl:classPredicate rdf:resource="#ColumnaNumerica"/><swrl:argument1 rdf:resource="urn:swrl#c"/></swrl:ClassAtom></rdf:first><rdf:rest><rdf:Description><rdf:first><swrl:DatavaluedPropertyAtom><swrl:propertyPredicate rdf:resource="#tieneCorrelacionMaxima"/><swrl:argument1 rdf:resource="urn:swrl#c"/><swrl:argument2 rdf:resource="urn:swrl#corr"/></swrl:DatavaluedPropertyAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></rdf:rest></rdf:Description></swrl:body><swrl:head><rdf:Description><rdf:first><swrl:BuiltinAtom><swrl:builtin rdf:resource="http://swrl.stanford.edu/ontologies/built-ins/3.3/sqwrl.owl#avg"/><swrl:arguments><rdf:Description><rdf:first rdf:resource="urn:swrl#corr"/><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:arguments></swrl:BuiltinAtom></rdf:first><rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/></rdf:Description></swrl:head></swrl:Imp>
+
+</rdf:RDF>

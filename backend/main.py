@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # Configuration
-ONTOLOGY_PATH = os.getenv("ONTOLOGY_PATH", "/app/ontology.owx")
+ONTOLOGY_PATH = os.getenv("ONTOLOGY_PATH", "demo_experto_eda_v3_numericas.owx")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 MODEL_NAME = os.getenv("MODEL_NAME", "llama3.2")
 

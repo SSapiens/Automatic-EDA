@@ -1,73 +1,43 @@
 % =================================================================
 % SISTEMA EXPERTO EDA - REPRESENTACION DE CONOCIMIENTO (PROLOG)
+% DATASET: SEATTLE WEATHER
 % =================================================================
 
-% 1. Representacion Objeto-Atributo-Valor (Metadatos de flight_price.csv - 1000 registros)
-% Formato: atributo(Objeto, Atributo, Valor).
+% 1. Representacion Objeto-Atributo-Valor
+% atributo(Variable, Metrica, Valor).
 
-% Metadatos de la columna 'airline'
-atributo(airline, cardinalidad, 6).
-atributo(airline, ratio_nulos, 0.0).
-atributo(airline, ratio_dominante, 0.40).
+% Metadatos de 'precipitation'
+atributo(precipitation, asimetria, 3.45).
+atributo(precipitation, ratio_outliers, 0.12).
+atributo(precipitation, correlacion_max, 0.32).
 
-% Metadatos de la columna 'source_city' (Solo Delhi)
-atributo(source_city, cardinalidad, 1).
-atributo(source_city, ratio_nulos, 0.0).
-atributo(source_city, ratio_dominante, 1.0).
+% Metadatos de 'temp_max'
+atributo(temp_max, asimetria, 0.15).
+atributo(temp_max, ratio_outliers, 0.01).
+atributo(temp_max, correlacion_max, 0.88).
 
-% Metadatos de la columna 'destination_city' (Solo Mumbai)
-atributo(destination_city, cardinalidad, 1).
-atributo(destination_city, ratio_nulos, 0.0).
-atributo(destination_city, ratio_dominante, 1.0).
+% Metadatos de 'wind'
+atributo(wind, asimetria, 0.85).
+atributo(wind, ratio_outliers, 0.07).
+atributo(wind, correlacion_max, 0.25).
 
-% Metadatos de la columna 'class' (Solo Economy)
-atributo(class, cardinalidad, 1).
-atributo(class, ratio_nulos, 0.0).
-atributo(class, ratio_dominante, 1.0).
+% 2. Reglas de Inferencia (Conocimiento Estadistico)
 
-% Metadatos de la columna 'stops'
-atributo(stops, cardinalidad, 3).
-atributo(stops, ratio_nulos, 0.0).
-atributo(stops, ratio_dominante, 0.85).
+es_sesgada(X) :- 
+    atributo(X, asimetria, A), (A > 1.0 ; A < -1.0).
 
-% 2. Proposiciones y Reglas de Inferencia (Conocimiento Experto)
+tiene_outliers(X) :- 
+    atributo(X, ratio_outliers, R), R > 0.05.
 
-% Clasificacion de Columnas
-es_unaria(X) :- 
-    atributo(X, cardinalidad, 1).
+alta_correlacion(X) :- 
+    atributo(X, correlacion_max, C), C > 0.7.
 
-es_binaria(X) :- 
-    atributo(X, cardinalidad, 2).
+% Inferencia de tecnicas
+sugiere_tecnica(X, histograma_log) :- es_sesgada(X).
+sugiere_tecnica(X, boxplot) :- tiene_outliers(X).
+sugiere_tecnica(X, scatter_plot) :- alta_correlacion(X).
 
-es_cardinalidad_baja(X) :- 
-    atributo(X, cardinalidad, N), N > 2, N =< 5.
-
-es_cardinalidad_media(X) :- 
-    atributo(X, cardinalidad, N), N > 5, N =< 15.
-
-es_cardinalidad_alta(X) :- 
-    atributo(X, cardinalidad, N), N > 15.
-
-es_desbalanceada(X) :- 
-    atributo(X, ratio_dominante, R), R > 0.8.
-
-% Recomendacion de Tecnicas
-sugiere_tecnica(X, torta_pastel) :- 
-    es_binaria(X).
-
-sugiere_tecnica(X, barras_vertical) :- 
-    es_cardinalidad_baja(X).
-
-sugiere_tecnica(X, barras_horizontal) :- 
-    es_cardinalidad_media(X).
-
-sugiere_tecnica(X, treemap) :- 
-    es_cardinalidad_alta(X).
-
-recomienda_agrupar(X) :- 
-    es_cardinalidad_alta(X).
-
-% 3. Ejemplos de Consultas (Inferencias)
-% ?- sugiere_tecnica(airline, T).
-% ?- es_desbalanceada(source_city).
-% ?- sugiere_tecnica(X, barras_horizontal).
+% 3. Consultas de ejemplo
+% ?- sugiere_tecnica(precipitation, T).
+% ?- alta_correlacion(temp_max).
+% ?- tiene_outliers(wind).

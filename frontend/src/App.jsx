@@ -109,8 +109,15 @@ function App() {
                 {fullResults.ontology.map((res, i) => (
                   <div key={i} className="card glass" style={{ padding: '1rem' }}>
                     <h3 style={{ margin: '0 0 0.5rem 0', color: '#38bdf8' }}>{res.column}</h3>
-                    <p style={{ fontSize: '0.9rem' }}><strong>Cardinalidad:</strong> {res.cardinality}</p>
-                    <div>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '0.2rem' }}>
+                      <strong>Asimetría:</strong> {res.asimetria?.toFixed(2)} | 
+                      <strong> Outliers:</strong> {(res.ratio_outliers * 100).toFixed(1)}%
+                    </p>
+                    <p style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                      <strong>Nulos:</strong> {(res.ratio_nulos * 100).toFixed(1)}% | 
+                      <strong> Correlación Máx:</strong> {res.max_corr?.toFixed(2)} <span style={{fontSize: '0.75rem', color: '#38bdf8'}}>(con {res.max_corr_col})</span>
+                    </p>
+                    <div style={{ marginTop: '0.5rem' }}>
                       {res.profiles.map(p => <span key={p} className="badge">{p}</span>)}
                     </div>
                     <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '1rem' }}>
@@ -125,7 +132,7 @@ function App() {
               <div>
                 <h3>Árbol de Decisión (Extracción de Reglas)</h3>
                 <pre>{fullResults.ml.tree}</pre>
-                <h3 style={{ marginTop: '2rem' }}>Reglas de Asociación (Apriori)</h3>
+                <h3 style={{ marginTop: '2rem' }}>Dependencias de Correlación (Pearson)</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {fullResults.ml.association_rules.map((r, i) => (
                     <div key={i} className="badge" style={{ display: 'block', borderRadius: '0.5rem' }}>{r}</div>
@@ -149,7 +156,7 @@ function App() {
             <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>Este asesor utiliza los resultados de la Ontología y el ML para fundamentar sus respuestas.</p>
             <textarea 
               rows="3" 
-              placeholder="¿Qué me sugieres para una columna con cardinalidad alta?"
+              placeholder="¿Qué me sugieres para una columna con asimetría alta?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
             />
