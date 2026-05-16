@@ -82,6 +82,18 @@ El backend expone los siguientes servicios:
 
 ---
 
+### 📊 Resultados Esperados de las Consultas (Demo)
+
+Al ejecutar las consultas SQWRL en Protégé sobre el dataset de Seattle, estos son los resultados que el sistema debe arrojar:
+
+| Consulta | Lo que "piensa" el motor | Resultado Esperado |
+| :--- | :--- | :--- |
+| **Q1 (Predictores)** | Busca variables normales con alta correlación. | Identifica a `temp_max` y `temp_min` (Corr: 0.88). |
+| **Q2 (Calidad)** | Busca sesgo extremo ($>2$) y muchos outliers ($>10\%$). | Identifica a `precipitation` como variable de riesgo crítico. |
+| **Q3 (Agregación)** | Calcula el promedio de dependencia del dataset. | Retorna un valor único (aprox. `0.52`) como métrica de cohesión del dataset. |
+
+---
+
 ## 🛠️ Guía de Ejecución
 
 ### Requisitos Previos
