@@ -1,11 +1,13 @@
 services:
   backend:
     build: ./backend
-    network_mode: "host"
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend:/app
     environment:
-      - OLLAMA_URL=http://localhost:11434
+      # host.docker.internal resuelve al localhost de Windows/Mac
+      - OLLAMA_URL=http://host.docker.internal:11434
       - MODEL_NAME=llama3.2
       - JAVA_HOME=/usr/lib/jvm/default-java
 

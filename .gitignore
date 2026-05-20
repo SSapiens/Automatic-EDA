@@ -37,3 +37,4 @@ backend/test_*.owl
 # OS
 .DS_Store
 Thumbs.db
+press/
